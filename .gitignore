@@ -211,3 +211,5 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 /appsettings.Development.json
+/Siobhan/Data
+/Siobhan/Logs
