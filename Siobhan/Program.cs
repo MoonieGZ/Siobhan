@@ -1,8 +1,12 @@
+using System.Reflection;
 using DisCatSharp;
 using DisCatSharp.ApplicationCommands;
+using DisCatSharp.Enums;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Serilog;
 using Serilog.Events;
 using Siobhan.Helpers;
+using Siobhan.Services;
 
 namespace Siobhan;
 
@@ -32,31 +36,33 @@ public static class Program
             LoggerFactory = new LoggerFactory().AddSerilog(Log.Logger),
             AutoReconnect = true,
             FeedbackEmail = "alyxia@riseup.net",
-            AttachUserInfo = true
+            AttachUserInfo = true,
+            Intents = DiscordIntents.All,
+            ServiceProvider = new ServiceCollection()
+                .AddSingleton<ConfigService>()
+                .BuildServiceProvider()
         };
         DiscordClient discordClient = new(discordConfiguration);
 
+        var appCommandModule = typeof(ApplicationCommandsModule);
+        var commands = Assembly.GetExecutingAssembly().GetTypes().Where(t => appCommandModule.IsAssignableFrom(t) && !t.IsNested).ToList();
+
         var appCommandExt = discordClient.UseApplicationCommands();
 
-        try
-        {
-            Console.WriteLine("Connecting to Discord...");
-            await discordClient.ConnectAsync();
+        foreach (var command in commands)
+			appCommandExt.RegisterGuildCommands(command, 843466538408869918);
 
-            discordClient.Logger.LogInformation(
-                "Connection success! Logged in as {CurrentUserUsername}#{CurrentUserDiscriminator} ({CurrentUserId})",
-                discordClient.CurrentUser.Username, discordClient.CurrentUser.Discriminator,
-                discordClient.CurrentUser.Id);
+        // Register event handlers across the entire project
+        discordClient.RegisterEventHandlers(Assembly.GetExecutingAssembly());
 
-            await Task.Delay(-1);
-        }
-        catch (Exception ex)
-        {
-            Log.Fatal(ex, "Application terminated unexpectedly");
-        }
-        finally
-        {
-            Log.CloseAndFlush();
-        }
+        Console.WriteLine("Connecting to Discord...");
+        await discordClient.ConnectAsync();
+
+        discordClient.Logger.LogInformation(
+            "Connection success! Logged in as {CurrentUserUsername}#{CurrentUserDiscriminator} ({CurrentUserId})",
+            discordClient.CurrentUser.Username, discordClient.CurrentUser.Discriminator,
+            discordClient.CurrentUser.Id);
+
+        await Task.Delay(-1);
     }
 }
