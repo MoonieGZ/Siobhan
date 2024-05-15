@@ -5,15 +5,15 @@ EXPOSE 8080
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Siobhan.csproj", "."]
-RUN dotnet restore "./Siobhan.csproj"
+COPY ["Firefly.csproj", "."]
+RUN dotnet restore "./Firefly.csproj"
 COPY . .
 WORKDIR "/src/."
-RUN dotnet build "./Siobhan.csproj" -c $BUILD_CONFIGURATION -o /app/build
+RUN dotnet build "./Firefly.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Siobhan.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Firefly.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 ENV \
@@ -32,6 +32,6 @@ COPY --from=publish /app/publish .
 RUN chown -R 1000:1000 /app
 
 USER 1000
-ENTRYPOINT ["dotnet", "Siobhan.dll"]
+ENTRYPOINT ["dotnet", "Firefly.dll"]
 
 HEALTHCHECK --interval=60s --retries=5 CMD curl --fail http://localhost:8080/health || exit 1

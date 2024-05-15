@@ -1,8 +1,12 @@
+using Discord;
+using Discord.WebSocket;
+using Fergun.Interactive;
+using Firefly.Extensions;
+using Firefly.Helpers;
 using Serilog;
 using Serilog.Events;
-using Siobhan.Helpers;
 
-namespace Siobhan;
+namespace Firefly;
 
 public static class Program
 {
@@ -18,7 +22,9 @@ public static class Program
             .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
 #endif
             .WriteTo.Console()
-            .WriteTo.File("Logs/latest-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14,
+            .WriteTo.File("Logs/latest-.log",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
                 restrictedToMinimumLevel: LogEventLevel.Information)
             .CreateLogger();
 
@@ -26,6 +32,25 @@ public static class Program
         {
             var builder = WebApplication.CreateBuilder();
             builder.Host.UseSerilog();
+
+            builder.Services
+                .AddDiscord(
+                    discordClient =>
+                    {
+                        discordClient.GatewayIntents = (GatewayIntents.AllUnprivileged
+                                                        & ~GatewayIntents.GuildInvites
+                                                        & ~GatewayIntents.GuildScheduledEvents)
+                                                       | GatewayIntents.GuildMembers
+                                                       | GatewayIntents.MessageContent;
+                        discordClient.AlwaysDownloadUsers = true;
+                        discordClient.MessageCacheSize = 1000;
+                    },
+                    _ => { },
+                    textCommandsService => { textCommandsService.CaseSensitiveCommands = false; },
+                    builder.Configuration)
+                .AddLogging(options => options.AddSerilog(dispose: true))
+                .AddSingleton<LogAdapter<BaseSocketClient>>()
+                .AddSingleton<InteractiveService>();
 
             var app = builder.Build();
             app.UseSerilogRequestLogging();

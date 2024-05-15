@@ -1,13 +1,14 @@
 {
   "profiles": {
-    "http": {
+    "Debug": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5063"
+      "applicationUrl": "http://localhost:5063",
+      "workingDirectory": "bin/Debug/net8.0"
     },
     "IIS Express": {
       "commandName": "IISExpress",

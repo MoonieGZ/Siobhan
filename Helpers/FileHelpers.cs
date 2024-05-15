@@ -1,4 +1,4 @@
-﻿namespace Siobhan.Helpers;
+﻿namespace Firefly.Helpers;
 
 public abstract class FileHelpers
 {
